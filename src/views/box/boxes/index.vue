@@ -56,7 +56,7 @@
           v-hasPermi="['obcase:box:remove']"
         >删除</el-button>
       </el-col>
-      <el-col :span="1.5">
+      <!--<el-col :span="1.5">
         <el-button
           type="warning"
           icon="el-icon-download"
@@ -64,7 +64,7 @@
           @click="handleExport"
           v-hasPermi="['obcase:box:export']"
         >导出</el-button>
-      </el-col>
+      </el-col>-->
     </el-row>
 
     <el-table v-loading="loading" :data="boxList" @selection-change="handleSelectionChange">
@@ -73,6 +73,11 @@
       <el-table-column label="箱子图片" align="center" prop="boxPicture">
         <template slot-scope="scope">
           <img class="scope_img" :src="scope.row.boxPicture" alt="">
+        </template>
+      </el-table-column>
+      <el-table-column label="商品图片" align="center" prop="goodsPicture">
+        <template slot-scope="scope">
+          <img class="scope_img" :src="scope.row.goodsPicture" alt="">
         </template>
       </el-table-column>
       <el-table-column label="箱子分组" align="center" prop="groupName" />
@@ -117,10 +122,10 @@
     />
 
     <!-- 添加或修改箱子对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="700px" append-to-body class="addBoxes" @close="handleClose"> 
+    <el-dialog :title="title" :visible.sync="open" width="700px" append-to-body class="addBoxes" @close="handleClose" v-if="open"> 
       <el-form ref="form" :model="form" :rules="rules" id="addCsgoBox">
         <div style="margin-left: 25px;">
-          <el-form-item label="箱子分组" style="white-space:nowrap">
+          <el-form-item label="箱子分组" style="white-space:nowrap" prop="groupId">
             <el-select v-model="form.groupId" placeholder="请选择">
               <el-option
                 v-for="item in groupList"
@@ -130,14 +135,14 @@
               </el-option>
             </el-select>
           </el-form-item>
-          <el-form-item label="箱子的类型">
+          <el-form-item label="箱子的类型" prop="boxType">
             <el-select v-model="form.boxType" placeholder="请选择箱子的类型">
               <!--<el-option label="请选择" value="请选择" />-->
               <el-option label="抽奖箱子" value="0" />
               <!--<el-option label="满额赠送" value="1" />-->
             </el-select>
           </el-form-item>
-          <el-form-item label="算法类型">
+          <el-form-item label="算法类型" prop="algoType">
             <el-select v-model="form.algoType" placeholder="请选择算法">
               <!--<el-option label="请选择" value="请选择" />-->
               <el-option label="商品管控算法" value="1" />
@@ -145,52 +150,51 @@
             </el-select>
           </el-form-item>
           <el-form-item label="箱子名称" prop="boxName">
-            <el-input v-model="form.boxName" placeholder="请输入箱子名称" />
+            <el-input v-model="form.boxName" placeholder="请输入箱子名称" maxlength="10"/>
           </el-form-item>
           <el-form-item label="商品图片" prop="goodsPicture">
             <el-input v-model="form.goodsPicture" placeholder="请输入商品图片" />
-            <secondFz ref='secondFzref' :fileList="form.goodsPicture?[{url:form.goodsPicture}]:[]" :dialogImageUrl='form.goodsPicture' @showImgUrl="(url)=>{this.form.goodsPicture=url}" @removeImg="()=>{this.form.goodsPicture=''}" />
+            <uploadImg :fileList="form.goodsPicture?[{url:form.goodsPicture}]:[]" @getShopProfileFn="(url)=>{form.goodsPicture=url}"/>
           </el-form-item>
           <el-form-item label="箱子图片" prop="boxPicture">
             <el-input v-model="form.boxPicture" placeholder="请输入箱子图片" />
-            <secondFz ref='secondFzref' :fileList="form.boxPicture?[{url:form.boxPicture}]:[]" :dialogImageUrl='form.boxPicture' @showImgUrl="(url)=>{this.form.boxPicture=url}" @removeImg="()=>{this.form.boxPicture=''}"/>
+            <uploadImg :fileList="form.boxPicture?[{url:form.boxPicture}]:[]" @getShopProfileFn="(url)=>{form.boxPicture=url}"/>
           </el-form-item>
           <el-form-item label="箱子背景图片" prop="boxBgPicture">
             <el-input v-model="form.boxBgPicture" placeholder="请输入箱子背景图片" />
-            <secondFz ref='secondFzref' :fileList="form.boxBgPicture?[{url:form.boxBgPicture}]:[]" :dialogImageUrl='form.boxBgPicture' @showImgUrl="(url)=>{this.form.boxBgPicture=url}" @removeImg="()=>{this.form.boxBgPicture=''}" />
+            <uploadImg  :fileList="form.boxBgPicture?[{url:form.boxBgPicture}]:[]" @getShopProfileFn="(url)=>{form.boxBgPicture=url}"/>
           </el-form-item>
 
        </div>
        <div style="margin-left: 40px;">
           <el-form-item label="箱子悬浮背景色" prop="boxHoverColor">
-            <el-input v-model="form.boxHoverColor" placeholder="请输入箱子悬浮背景色" />
-            <secondFz ref='secondFzref' :fileList="form.boxHoverColor?[{url:form.boxHoverColor}]:[]" :dialogImageUrl='form.boxHoverColor' @showImgUrl="(url)=>{this.form.boxHoverColor=url}" @removeImg="()=>{this.form.boxHoverColor=''}" />
-
+            <el-input v-model="form.boxHoverColor" placeholder="请输入箱子悬浮背景色"/>
+            <uploadImg :fileList="form.boxHoverColor?[{url:form.boxHoverColor}]:[]" @getShopProfileFn="(url)=>{form.boxHoverColor=url}"/>
           </el-form-item>
           <!-- 增加箱子新增选项 -->
           <el-form-item label="箱子价格；美元" prop="boxPrice">
-            <el-input v-model="form.boxPrice" placeholder="请输入箱子价格；美元" />
+            <el-input v-model="form.boxPrice" placeholder="请输入箱子价格；美元"  maxlength="4"/>
           </el-form-item>
           <el-form-item label="游戏组id外键" prop="groupId">
-            <el-input v-model="form.groupId" placeholder="请输入游戏组id外键" />
+            <el-input v-model="form.groupId" placeholder="请输入游戏组id外键" readonly="true" />
           </el-form-item>
-          <el-form-item label="排序" prop="orderIndex">
+          <!--<el-form-item label="排序" prop="orderIndex">
             <el-input v-model="form.orderIndex" placeholder="请输入排序" />
-          </el-form-item>
+          </el-form-item>-->
           <el-form-item label="成本价格" prop="boxCost">
-            <el-input v-model="form.boxCost" placeholder="请输入成本价格" />
+            <el-input v-model="form.boxCost" placeholder="请输入成本价格"  maxlength="4"/>
           </el-form-item>
           <el-form-item label="推广号成本价格" prop="boxCostExtension">
-            <el-input v-model="form.boxCostExtension" placeholder="请输入推广号成本价格" />
+            <el-input v-model="form.boxCostExtension" placeholder="请输入推广号成本价格"  maxlength="4"/>
           </el-form-item>
           <el-form-item label="管控上限阈值" prop="threshold">
-            <el-input v-model="form.threshold" placeholder="请输入管控上限阈值" />
+            <el-input v-model="form.threshold" placeholder="请输入管控上限阈值"  maxlength="10"/>
           </el-form-item>
           <el-form-item label="管控下限阈值" prop="lowerThreshold">
-            <el-input v-model="form.lowerThreshold" placeholder="请输入管控下限阈值" />
+            <el-input v-model="form.lowerThreshold" placeholder="请输入管控下限阈值"  maxlength="10"/>
           </el-form-item>
           <el-form-item label="高价值物品爆率" prop="highProbability">
-            <el-input v-model="form.highProbability" placeholder="请输入高价值物品爆率" />
+            <el-input v-model="form.highProbability" placeholder="请输入高价值物品爆率" maxlength="10" />
           </el-form-item>
        </div>
 
@@ -234,7 +238,7 @@
             </el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="价格筛选">
+        <!--<el-form-item label="价格筛选">
           <el-input
             class="priceInput"
             v-model="queryParamsGoods.minPrice"
@@ -247,7 +251,7 @@
             placeholder="结束价格"
             oninput="value=value.replace(/[^\d.]/g,'')"
           />
-        </el-form-item>
+        </el-form-item>-->
         <el-form-item>
           <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQueryGoods">搜索</el-button>
           <el-button icon="el-icon-refresh" size="mini" @click="resetQueryGoods">重置</el-button>
@@ -356,6 +360,7 @@ export default {
   name: "Box",
   data() {
     return {
+      isSubmit:false,
       totalChaXun:0,
       dialogVisible:false,
       // 遮罩层
@@ -422,6 +427,45 @@ export default {
       form: {},
       // 表单校验
       rules: {
+        groupId: [
+          { required: true, message: "箱子分组不能为空", trigger: "blur" }
+        ],
+        boxType:[
+          { required: true, message: "箱子类型不能为空", trigger: "blur" }
+        ],
+        algoType: [
+          { required: true, message: "算法类型不能为空",trigger:'blur'}
+        ],
+        boxName: [
+          { required: true, message: "箱子名称不能为空", trigger: "blur" }
+        ],
+        goodsPicture: [
+          { required: true, message: "商品图片不能为空", trigger: "blur" }
+        ],
+        boxPicture:[
+          { required: true, message: "箱子图片不能为空", trigger: "blur" }
+        ],
+        boxPrice: [
+          { required: true, message: "箱子价格不能为空",trigger:'blur'}
+        ],
+        groupId: [
+          { required: true, message: "游戏组id外键不能为空", trigger: "blur" }
+        ],
+        boxCost: [
+          { required: true, message: "成本价格不能为空", trigger: "blur" }
+        ],
+        boxCostExtension:[
+          { required: true, message: "推广号成本价格不能为空", trigger: "blur" }
+        ],
+        threshold: [
+          { required: true, message: "管控上限阈值不能为空",trigger:'blur'}
+        ],
+        lowerThreshold:[
+          { required: true, message: "管控下限阈值不能为空", trigger: "blur" }
+        ],
+        highProbability: [
+          { required: true, message: "高价值物品爆率不能为空",trigger:'blur'}
+        ],
       },
       groupList: [],
       //公用商品库中的商品
@@ -443,9 +487,6 @@ export default {
       totalChooseGoods: 0,
       typeList:[
         {
-          goodsType:'全部'
-        },
-        {
           goodsType:'印花及武器箱'
         },
         {
@@ -453,6 +494,9 @@ export default {
         },
         {
           goodsType:'手枪'
+        },
+        {
+          goodsType:'步枪'
         },
         {
           goodsType:'冲锋枪'
@@ -474,9 +518,6 @@ export default {
         }
       ],
       abraList:[
-        {
-          name:'全部'
-        },
         {
           name:'战痕累累'
         },
@@ -509,6 +550,8 @@ export default {
     },
     //将调接口添加商品
     addGoodsListUpdate(){
+      this.boxGoodsJson1=[];
+      this.addGoodsId="";
       var goodsWeightTotal = 0;
       var goodsWeightExtensionTotal = 0;
       this.goodsListUpdate.forEach((value,index)=>{
@@ -544,25 +587,22 @@ export default {
         "goodsId": this.addGoodsId,
         "boxGoodsJson":obj
       }
-      if(goodsWeightTotal===100&&goodsWeightExtensionTotal===100){
-        addGoods(params).then(res => {
-          if(res.code===0){
-            console.log("请求成功")
-            this.chooseGoods = false;
-          }
-        });
-      }else{
-        this.msgError("请按照规则填写权重或！");
-      }
-    },
-    //从商品库选择商品添加到添加商品
-    goodsChoose(row){
-      this.goodsListUpdate.push(row);
-      this.goodsList.forEach((value,index)=>{
-        if(row.goodsId===this.goodsList[index].goodsId){
-          this.goodsList.splice(index,1)
+      if(!this.isSubmit){
+        if(goodsWeightTotal===100&&goodsWeightExtensionTotal===100){
+          this.isSubmit = true;
+          addGoods(params).then(res => {
+            // if(res.code===200){
+              this.msgSuccess("添加成功！");
+              this.chooseGoods = false;
+              setTimeout(()=>{
+                this.isSubmit=false;
+              },500)
+          });
+        }else{
+          this.msgError("请按照规则填写权重或！");
         }
-      })
+      }
+
     },
     //删除要删除的商品
     delGoods(row){
@@ -572,9 +612,24 @@ export default {
         }
       });
     },
+    //从商品库选择商品添加到添加商品
+    goodsChoose(row){
+      const isAdd = this.goodsListUpdate.some((value,index) => row.goodsId===this.goodsListUpdate[index].goodsId)
+      if(!isAdd){
+        this.goodsListUpdate.push(row);
+        this.goodsList.forEach((value,index)=>{
+          if(row.goodsId===this.goodsList[index].goodsId){
+            this.goodsList.splice(index,1);
+          }
+        })
+      }else{
+        this.msgError("请勿重复添加相同商品！");
+      }
+    },
+
     /**关闭dialog**/
     handleClose(done) {
-      this.$refs.secondFzref.handleRemove();
+      // this.$refs.secondFzref.handleRemove();
       this.dialogVisible = false;
     },
     /** 查询商品列表 */
@@ -599,6 +654,7 @@ export default {
       this.loading = true;
       listBox(this.queryParams).then(response => {
         this.boxList = response.rows;
+        console.log(this.boxList)
         this.totalChaXun = response.total;
         this.loading = false;
       });
@@ -630,7 +686,6 @@ export default {
         boxLiveIcon: undefined,
         boxAnchorName: undefined,
         boxAnchorAvatar: undefined,
-        boxPrice: undefined,
         gameId: undefined,
         groupId: undefined,
         groupName: undefined,
@@ -653,6 +708,7 @@ export default {
     },
     /** 重置按钮操作 */
     resetQuery() {
+      this.queryParams.groupId=undefined
       this.resetForm("queryForm");
       this.handleQuery();
     },
@@ -702,7 +758,9 @@ export default {
           }else{
             value.checkIgnore=false;
           }
+          
           this.goodsListUpdate.push(value)
+
         });
       });
     },
@@ -717,8 +775,12 @@ export default {
       this.reset();
       const boxId = row.boxId || this.ids
       getBox(boxId).then(response => {
-        // this.form = response.data;
-        this.form= Object.assign(response.data.box,response.data.boxOpenInfo)
+        console.log("------------------修改箱子")
+        console.log(response)
+        this.form= Object.assign(response.data.boxOpenInfo,response.data.box)
+        if(this.form.boxType===0){this.form.boxType="抽奖箱子"}
+        if(this.form.algoType===1){this.form.algoType="商品管控算法"}
+        this.form.boxType
         this.open = true;
         this.title = "修改箱子";
       });
@@ -728,6 +790,9 @@ export default {
       this.$refs["form"].validate(valid => {
         if (valid) {
           if (this.form.boxId != undefined) {
+            var params = this.form;
+            if(params.boxType=="抽奖箱子"){params.boxType=0}
+            if(params.algoType=="商品管控算法"){params.algoType=1}
             updateBox(this.form).then(response => {
               if (response.code === 200) {
                 this.msgSuccess("修改成功");
@@ -751,7 +816,8 @@ export default {
     handleDelete(row) {
       console.log(row)
       const boxIds = row.boxId || this.ids;
-      this.$confirm('是否确认删除箱子编号为"' + boxIds + '"的数据项?', "警告", {
+      const boxNames = row.boxName;
+      this.$confirm(this.ids.length===0?'确定删除此商品吗？':'确定删除'+this.ids.length+'个商品吗？', "警告", {
           confirmButtonText: "确定",
           cancelButtonText: "取消",
           type: "warning"
@@ -796,7 +862,7 @@ export default {
 </style>
 <style>
 .scope_img{
-  height: 80px;
+  width: 100px;
 }
 .dialogDiv{
   min-height: 700px!important;

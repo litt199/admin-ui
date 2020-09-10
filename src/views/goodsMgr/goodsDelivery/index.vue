@@ -9,26 +9,18 @@
           size="small"
           @keyup.enter.native="handleQuery"
         />
-      </el-form-item>
- 
-      <!--<el-form-item label="商品名称" prop="goodsName">
-        <el-input
-          v-model="queryParams.goodsName"
-          placeholder="请输入商品名称"
-          clearable
+      </el-form-item> 
+      <el-form-item label="取回时间" prop="dateRange">
+        <el-date-picker
+          v-model="dateRange"
           size="small"
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>-->
-    
-   
-      <el-form-item label="取回时间" prop="retrieveTime">
-        <el-date-picker clearable size="small" style="width: 200px"
-          v-model="queryParams.retrieveTime"
-          type="date"
+          style="width: 240px"
           value-format="yyyy-MM-dd"
-          placeholder="选择取回装备时间">
-        </el-date-picker>
+          type="daterange"
+          range-separator="-"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+        ></el-date-picker>
       </el-form-item>
   
    
@@ -36,24 +28,30 @@
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
       </el-form-item>
+      
     </el-form>
+    <div style="position: absolute;top: 30px;right: 70px;font-size: 20px;">累计取回数量：{{sumNum}}，商品总金额：{{sumAmount}}$</div>
 
     
 
     <el-table v-loading="loading" :data="goodsDeliveryList">
       <el-table-column type="text" width="55" align="center" />
-      <el-table-column label="头像" align="center" prop="avatar" />
+      <el-table-column label="头像" align="center">
+        <template slot-scope="scope">
+          <img :src="(scope.row.avatar===null||scope.row.avatar===''||scope.row.avatar==='img')?imgAvatar:scope.row.avatar" alt="" class="imgAvatar">
+        </template>
+      </el-table-column>
       <el-table-column label="昵称" align="center" prop="nickName" />
       <el-table-column label="箱子" align="center">
         <template slot-scope="scope">
           <img class="scope_img" :src="scope.row.boxPicture" alt="">
-          <span>{{scope.row.boxName}}</span>
+          <p>{{scope.row.boxName}}</p>
         </template>
       </el-table-column>
       <el-table-column label="商品" align="center">
         <template slot-scope="scope">
           <img class="scope_img" :src="scope.row.goodsPicture" alt="">
-          <span>{{scope.row.goodsName}}</span>
+          <p>{{scope.row.goodsName}}</p>
         </template>
       </el-table-column>
       <el-table-column label="商品价格" align="center" prop="goodsPrice" />
@@ -88,18 +86,19 @@
       @pagination="getList"
     />
 
-    <!-- 添加或修改待发货对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body class="exchange">
-      <el-form ref="form" label-width="80px">
-        <el-form-item label="成本价">
-          <el-input v-model="confirmExchangeRes.deliverGoodsCostPrice" placeholder="请输入成本价"/>
-        </el-form-item>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="confirmExchange(confirmExchangeRes.deliverGoodsCostPrice)">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
-      </div>
-    </el-dialog>
+      <!-- 添加或修改待发货对话框 -->
+      <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body class="exchange">
+        <el-form ref="form" label-width="80px">
+          <el-form-item label="成本价">
+            <el-input v-model="confirmExchangeRes.deliverGoodsCostPrice" placeholder="请输入成本价"/>
+          </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+          <el-button type="primary" @click="confirmExchange(confirmExchangeRes.deliverGoodsCostPrice)">确 定</el-button>
+          <el-button @click="cancel">取 消</el-button>
+        </div>
+      </el-dialog>
+      
   </div>
 </template>
 
@@ -111,6 +110,12 @@ export default {
   name: "GoodsDelivery",
   data() {
     return {
+      //sumAmount商品总金额
+      sumAmount:0,
+      //累计取回数量
+      sumNum:0,
+      //默认头像
+      imgAvatar:require("../../../assets/headerImg/logo_icon.png"),
       //选择
        options: [{
           value: '0',
@@ -151,7 +156,8 @@ export default {
         steamRechargeCode: undefined,
         luckyFlag: undefined,
         anchorUserId: undefined,
-        voluntarilyPay: undefined
+        voluntarilyPay: undefined,
+        searchTime:undefined
       },
       // 表单参数
       form: {},
@@ -162,7 +168,10 @@ export default {
       confirmExchangeRes:{
         "id":null,
         "deliverGoodsCostPrice":undefined
-      }
+      },
+      //开箱统计时间查询
+      searchTime:"",
+      dateRange:""
     };
   },
   created() {
@@ -184,9 +193,15 @@ export default {
     /** 查询待发货列表 */
     getList() {
       this.loading = true;
+      if(this.dateRange){
+        this.searchTime = this.dateRange[0] +' 00:00:00'+' - ' + this.dateRange[1] + ' 00:00:00'
+      }else{
+        this.searchTime=""
+      }
+      this.queryParams.searchTime=this.searchTime;
       listGoodsDelivery(this.queryParams).then(response => {
-        console.log("----------------------------goodsDeliveryList待发货列表")
-        console.log(response.rows)
+        this.sumAmount = response.sumAmount
+        this.sumNum=response.total
         this.goodsDeliveryList = response.rows;
         this.total = response.total;
         this.loading = false;
@@ -225,6 +240,7 @@ export default {
     },
     /** 重置按钮操作 */
     resetQuery() {
+      this.dateRange="";
       this.resetForm("queryForm");
       this.handleQuery();
     },
@@ -307,12 +323,19 @@ export default {
 </script>
 <style scoped>
 .scope_img{
-  width: 146px;
-  display: block;
+  width: 100px;
+  display: inline-block;
+}
+.app-container .sumNum{
+
 }
 </style>
 <style>
+.imgAvatar{
+  width: 80px;
+}
 .exchange div.el-dialog{
   margin-top: 30vh !important;
 }
+
 </style>

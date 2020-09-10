@@ -1,77 +1,58 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" :inline="true" label-width="68px">
-      <el-form-item label="昵称" prop="nickName">
+      <!--<el-form-item label="中奖情况" prop="status">
+        <el-select v-model="queryParams.isWin" placeholder="请选择中奖情况" clearable size="small">
+            <el-option label="中奖" value="0" />
+            <el-option label="未中奖" value="1" />
+        </el-select>
+      </el-form-item>-->
+      <el-form-item label="用户昵称" prop="nickName">
         <el-input
           v-model="queryParams.nickName"
-          placeholder="请输入昵称"
+          placeholder="请输入用户昵称"
           clearable
           size="small"
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
+      <el-form-item label="开启时间"> 
+        <el-date-picker
+          v-model="daterange"
+          size="small"
+          style="width: 240px"
+          value-format="yyyy-MM-dd"
+          type="daterange"
+          range-separator="-"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+        ></el-date-picker>
+        </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
-
-    <el-row :gutter="10" class="mb8">
-     <!-- <el-col :span="1.5">
-        <el-button
-          type="primary"
-          icon="el-icon-plus"
-          size="mini"
-          @click="handleAdd"
-          v-hasPermi="['user:user:add']"
-        >新增</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="success"
-          icon="el-icon-edit"
-          size="mini"
-          :disabled="single"
-          @click="handleUpdate"
-          v-hasPermi="['user:user:edit']"
-        >修改</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="danger"
-          icon="el-icon-delete"
-          size="mini"
-          :disabled="multiple"
-          @click="handleDelete"
-          v-hasPermi="['user:user:remove']"
-        >删除</el-button>
-      </el-col>-->
-    </el-row>
-
-    <el-table v-loading="loading" :data="userList">
-      <el-table-column type="text" width="55" align="center" />      
-      <el-table-column label="头像" align="center">
+    <el-table v-loading="loading" :data="recordList">
+      <el-table-column type="text" width="55" align="center" />
+      <el-table-column label="头像" align="center" prop="avatar">
         <template slot-scope="scope">
-          <img :src="(scope.row.avatar===null||scope.row.avatar===''||scope.row.avatar==='img')?imgAvatar:scope.row.avatar" alt="" class="imgAvatar">
+          <img :src="(scope.row.avatar===null||scope.row.avatar===''||scope.row.avatar==='img')?imgAvatar:scope.row.avatar" alt="" class="imgAvatar"> 
         </template>
       </el-table-column>
       <el-table-column label="昵称" align="center" prop="nickName" />
-      <el-table-column label="箱子" align="center">
+      <el-table-column label="奖品" align="center" >
         <template slot-scope="scope">
-          <img class="scope_img" :src="scope.row.boxPicture" alt="">
-          <p>{{scope.row.boxName}}</p>
-        </template>
-      </el-table-column>
-      <el-table-column label="箱子价格" align="center" prop="boxPrice" />
-      <el-table-column label="商品" align="center">
-        <template slot-scope="scope">
-          <img class="scope_img" :src="scope.row.goodsPicture" alt="">
+          <img class="scope_img" :src="scope.row.goodsPicture" alt="" v-show="scope.row.goodsName">
           <p>{{scope.row.goodsName}}</p>
         </template>
       </el-table-column>
-      <el-table-column label="商品价格" align="center" prop="goodsPrice" />
-      <el-table-column label="开箱时间" align="center" prop="createTime" />
-      
+      <el-table-column label="奖金" align="center" prop="money" />
+      <el-table-column label="参与时间" align="center" prop="createDate" width="180">
+        <template slot-scope="scope">
+          <span>{{ parseTime(scope.row.createDate, '{y}-{m}-{d}') }}</span>
+        </template>
+      </el-table-column>
     </el-table>
 
     <pagination
@@ -81,24 +62,14 @@
       :limit.sync="queryParams.pageSize"
       @pagination="getList"
     />
-
-    <!-- 添加或修改用户对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
-      </div>
-    </el-dialog>
   </div>
 </template>
 
 <script>
-import { listUser, getUser, delUser, addUser, updateUser, exportUser,getUserOpenPage } from "@/api/user/user";
+import { listRecord, getRecord, delRecord, addRecord, updateRecord, exportRecord } from "@/api/everyRecord";
 
 export default {
-  name: "User",
+  name: "Record",
   data() {
     return {
       //默认头像
@@ -113,36 +84,61 @@ export default {
       multiple: true,
       // 总条数
       total: 0,
-      // 用户表格数据
-      userList: [],
+      // 每日免费参与记录表格数据
+      recordList: [],
       // 弹出层标题
       title: "",
       // 是否显示弹出层
       open: false,
+      //日期范围
+      daterange:"",
       // 查询参数
       queryParams: {
         pageNum: 1,
         pageSize: 10,
-        nickName: undefined,
+        edId: undefined,
+        goodsId: undefined,
+        money: undefined,
+        userId: undefined,
+        openDay: undefined,
+        createDate: undefined,
+        status:undefined,
+        nikeName:undefined,
+        isWin:undefined,
+        beginTime:undefined,
+        endTime:undefined,
       },
+
       // 表单参数
       form: {},
       // 表单校验
-      rules: {
-      }
+      rules: {}
     };
   },
   created() {
     this.getList();
   },
   methods: {
-    /** 查询用户列表 */
+    /** 查询每日免费参与记录列表 */
     getList() {
       this.loading = true;
-      getUserOpenPage(this.queryParams).then(response => {
-        console.log("------------------------userList")
+      if(this.daterange===undefined){
+          this.queryParams.beginTime=undefined;
+          this.queryParams.endTime=undefined;
+      }else{
+          this.queryParams.beginTime=this.daterange[0];
+          this.queryParams.endTime=this.daterange[1];
+      }
+
+      listRecord(this.queryParams).then(response => {
+        this.recordList = response.rows;
         console.log(response.rows)
-        this.userList = response.rows;
+        // this.recordList.forEach((value,index)=>{
+        //   if(value.goodsName!=null){
+        //     this.recordList[index].money="参与奖";
+        //     this.recordList[index].goodsName="参与奖"
+        //   }
+        // })
         this.total = response.total;
         this.loading = false;
       });
@@ -155,39 +151,38 @@ export default {
     // 表单重置
     reset() {
       this.form = {
-        userId: undefined,
         nickName: undefined,
-        sex: undefined,
-        avatar: undefined,
-        openId: undefined,
+        id: undefined,
+        edId: undefined,
+        goodsId: undefined,
+        money: undefined,
+        userId: undefined,
+        openDay: undefined,
         createDate: undefined,
-        delFlag: undefined,
-        transactionUrl: undefined,
-        loginName: undefined,
-        loginPassword: undefined,
-        mobile: undefined,
-        extensioncode: undefined,
-        rechargenumber: undefined,
-        userType: undefined,
-        registerType: undefined,
-        extensionSource: undefined,
-        steamId: undefined
+        status:undefined,
+        nikeName:undefined,
+        isWin:undefined,
+        beginTime:undefined,
+        endTime:undefined,
       };
       this.resetForm("form");
     },
     /** 搜索按钮操作 */
     handleQuery() {
       this.queryParams.pageNum = 1;
+      console.log(this.queryParams)
       this.getList();
     },
     /** 重置按钮操作 */
     resetQuery() {
+      this.daterange=undefined;
+      this.queryParams.isWin=undefined;
       this.resetForm("queryForm");
       this.handleQuery();
     },
     // 多选框选中数据
     handleSelectionChange(selection) {
-      this.ids = selection.map(item => item.userId)
+      this.ids = selection.map(item => item.id)
       this.single = selection.length!=1
       this.multiple = !selection.length
     },
@@ -195,24 +190,24 @@ export default {
     handleAdd() {
       this.reset();
       this.open = true;
-      this.title = "添加用户";
+      this.title = "添加每日免费参与记录";
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
       this.reset();
-      const userId = row.userId || this.ids
-      getUser(userId).then(response => {
+      const id = row.id || this.ids
+      getRecord(id).then(response => {
         this.form = response.data;
         this.open = true;
-        this.title = "修改用户";
+        this.title = "修改每日免费参与记录";
       });
     },
     /** 提交按钮 */
     submitForm: function() {
       this.$refs["form"].validate(valid => {
         if (valid) {
-          if (this.form.userId != undefined) {
-            updateUser(this.form).then(response => {
+          if (this.form.id != undefined) {
+            updateRecord(this.form).then(response => {
               if (response.code === 200) {
                 this.msgSuccess("修改成功");
                 this.open = false;
@@ -220,7 +215,7 @@ export default {
               }
             });
           } else {
-            addUser(this.form).then(response => {
+            addRecord(this.form).then(response => {
               if (response.code === 200) {
                 this.msgSuccess("新增成功");
                 this.open = false;
@@ -233,13 +228,13 @@ export default {
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-      const userIds = row.userId || this.ids;
-      this.$confirm('是否确认删除用户编号为"' + userIds + '"的数据项?', "警告", {
+      const ids = row.id || this.ids;
+      this.$confirm('是否确认删除每日免费参与记录编号为"' + ids + '"的数据项?', "警告", {
           confirmButtonText: "确定",
           cancelButtonText: "取消",
           type: "warning"
         }).then(function() {
-          return delUser(userIds);
+          return delRecord(ids);
         }).then(() => {
           this.getList();
           this.msgSuccess("删除成功");
@@ -248,12 +243,12 @@ export default {
     /** 导出按钮操作 */
     handleExport() {
       const queryParams = this.queryParams;
-      this.$confirm('是否确认导出所有用户数据项?', "警告", {
+      this.$confirm('是否确认导出所有每日免费参与记录数据项?', "警告", {
           confirmButtonText: "确定",
           cancelButtonText: "取消",
           type: "warning"
         }).then(function() {
-          return exportUser(queryParams);
+          return exportRecord(queryParams);
         }).then(response => {
           this.download(response.msg);
         }).catch(function() {});
@@ -262,14 +257,11 @@ export default {
 };
 </script>
 <style scoped>
-.scope_img_div{
-  text-align: center;
-}
-.imgAvatar{
-  width: 80px;
-}
 .scope_img{
   width: 100px;
-  display: inline-block;
 }
-</style>>
+.imgAvatar{
+  display: inline-block;
+  width: 80px;
+}
+</style>

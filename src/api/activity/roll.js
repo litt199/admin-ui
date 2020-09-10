@@ -51,3 +51,23 @@ export function exportRoll(query) {
     params: query
   })
 }
+
+
+
+// 获取roll房下面的商品
+export function getRollGoods(query) {
+  return request({
+    url: '/activity/roll/RollInfoById',
+    method: 'get',
+    params: query
+  })
+}
+
+// 添加商品
+export function addGoods(data) {
+  return request({
+    url: '/activity/roll/addRollGoods',
+    method: 'post',
+    data:data
+  })
+}

@@ -44,7 +44,7 @@
           v-hasPermi="['coupon:coupon:remove']"
         >删除</el-button>
       </el-col>
-      <el-col :span="1.5">
+      <!--<el-col :span="1.5">
         <el-button
           type="warning"
           icon="el-icon-download"
@@ -52,7 +52,7 @@
           @click="handleExport"
           v-hasPermi="['coupon:coupon:export']"
         >导出</el-button>
-      </el-col>
+      </el-col>-->
     </el-row>
 
     <el-table v-loading="loading" :data="couponList" @selection-change="handleSelectionChange">
@@ -100,7 +100,7 @@
         <el-form-item label="名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入名称" />
         </el-form-item>
-        <el-form-item label="优惠券类型">
+        <el-form-item label="优惠券类型" prop="type">
           <el-select v-model="form.type" placeholder="请选择优惠券类型" style="width:350px;">
             <el-option label="代金券" value="1" />
             <el-option label="折扣券" value="2" />
@@ -108,13 +108,13 @@
           </el-select>
         </el-form-item>
         <el-form-item label="面值/折扣" prop="faceValue">
-          <el-input v-model="form.faceValue" placeholder="请输入面值，或者折扣" />
+          <el-input v-model="form.faceValue" placeholder="请输入面值，或者折扣" maxlength="10" oninput="value=value.match(/\d+(\.\d{0,2})?/) ? value.match(/\d+(\.\d{0,2})?/)[0] : ''" />
         </el-form-item>
         <el-form-item label="限制金额" prop="limitValue">
-          <el-input v-model="form.limitValue" placeholder="请输入限制金额，0表示无限制" />
+          <el-input v-model="form.limitValue" placeholder="请输入限制金额，0表示无限制" oninput="value= value.match(/\d+(\.\d{0,2})?/) ? value.match(/\d+(\.\d{0,2})?/)[0] : ''"  maxlength="10"/>
         </el-form-item>
         <el-form-item label="有效期时长/天" prop="validPeriod">
-          <el-input v-model="form.validPeriod" placeholder="请输入有效期时长，单位：天" />
+          <el-input v-model="form.validPeriod" placeholder="请输入有效期时长/天" onKeypress="return (/[\d]/.test(String.fromCharCode(event.keyCode)))" maxlength="4"/>
         </el-form-item>
         <el-form-item label="描述" prop="detail">
           <el-input v-model="form.detail" placeholder="请输入描述" />
@@ -125,8 +125,8 @@
             <el-option label="手工" value="2" />
           </el-select>
         </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="form.status" placeholder="请选择状态：正常,下线" style="width:350px;">
+        <el-form-item label="状态" prop="status">
+          <el-select v-model="form.status" placeholder="请选择状态" style="width:350px;">
             <el-option label="正常" value="0"/>
             <el-option label="下线" value="1" />
           </el-select>
@@ -173,19 +173,29 @@ export default {
       form: {},
       // 表单校验
       rules: {
+        name: [
+          { required: true, message: "名称不能为空", trigger: "blur" }
+        ],
+        faceValue:[
+          { required: true, message: "面值/折扣不能为空", trigger: "blur" }
+        ],
         type: [
-          { required: true, message: "优惠券类型：1-代金券，2-折扣券，3-优惠券不能为空", trigger: "blur" }
+          { required: true, message: "优惠券类型不能为空",trigger:'blur'}
         ],
         limitValue: [
           { required: true, message: "限制金额，0表示无限制不能为空", trigger: "blur" }
         ],
         validPeriod: [
-          { required: true, message: "有效期时长，单位：天不能为空", trigger: "blur" }
+          { required: true, message: "有效期时长/天,不能为空", trigger: "blur" }
         ],
         status: [
-          { required: true, message: "状态：0-正常，1-下线不能为空", trigger: "blur" }
+          { required: true, message: "状态不能为空", trigger:'blur'}
         ],
-      }
+        giveMethod:[
+          { required: true, message: "发放方式不能为空", trigger:'blur'}
+        ],
+      },
+      isSubmit:false
     };
   },
   created() {
@@ -268,7 +278,6 @@ export default {
     /** 提交按钮 */
     submitForm: function() {
       this.$refs["form"].validate(valid => {
-        console.log(this.from)
         if (valid) {
           if (this.form.id != undefined) {
             var params = this.form;
@@ -283,21 +292,30 @@ export default {
               }
             });
           } else {
-            addCoupon(this.form).then(response => {
-              if (response.code === 200) {
-                this.msgSuccess("新增成功");
-                this.open = false;
-                this.getList();
-              }
-            });
+            // console.log(that.isSubmit)
+            if(!this.isSubmit){
+              this.isSubmit = true
+              console.log('313'+this.isSubmit)
+              addCoupon(this.form).then(response => {
+                if (response.code === 200) {
+                 console.log('执行了几次')
+                  this.msgSuccess("新增成功");
+                  this.open = false;
+                  setTimeout(()=>{
+                    this.isSubmit=false;
+                  },500)
+                  this.getList();
+                }
+              }); 
+             }
+            }
           }
-        }
       });
     },
     /** 删除按钮操作 */
     handleDelete(row) {
       const ids = row.id || this.ids;
-      this.$confirm('是否确认删除优惠券和代金券编号为"' + ids + '"的数据项?', "警告", {
+      this.$confirm(this.ids.length===0?'确定删除此代金券吗？':'确定删除'+this.ids.length+'条代金券吗？', "警告", {
           confirmButtonText: "确定",
           cancelButtonText: "取消",
           type: "warning"

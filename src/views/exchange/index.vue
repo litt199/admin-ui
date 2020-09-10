@@ -10,26 +10,6 @@
           @keyup.enter.native="handleQueryGoods"
         />
       </el-form-item>
-      <el-form-item label="分类" style="white-space:nowrap">
-        <el-select v-model="queryParams.hellcaseItem" placeholder="全部">
-          <el-option
-            v-for="item in typeList"
-            :key="item.index"
-            :label="item.goodsType"
-            :value="item.goodsType">
-          </el-option>
-        </el-select>
-      </el-form-item>
-      <el-form-item label="磨损度" style="white-space:nowrap">
-        <el-select v-model="queryParams.goodsTitle" placeholder="全部">
-          <el-option
-            v-for="item in abraList"
-            :key="item.index"
-            :label="item.name"
-            :value="item.name">
-          </el-option>
-        </el-select>
-      </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
@@ -55,15 +35,6 @@
           @click="handleDelete"
           v-hasPermi="['obcase:exchange:remove']"
         >删除</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="warning"
-          icon="el-icon-download"
-          size="mini"
-          @click="handleExport"
-          v-hasPermi="['obcase:exchange:export']"
-        >导出</el-button>
       </el-col>
     </el-row>
 
@@ -182,10 +153,10 @@
     />
   </el-dialog>
   <el-dialog :visible.sync="dialogVisible" :before-close="handleClose" width="20%" style="top: 200px;">
-    <span>库存数量：</span><el-input class="exchangeChange" v-model="goodNum" placeholder="请输入商品数量"/>
+    <span>库存数量：</span><el-input maxlength="4" class="exchangeChange" onKeypress="return (/[\d]/.test(String.fromCharCode(event.keyCode)))" v-model="goodNum" placeholder="请输入商品数量"/>
     <span slot="footer" class="dialog-footer">
       <el-button type="primary" @click="addGoods(goodNum)">确 定</el-button>
-      <el-button @click="dialogVisible = false">取 消</el-button>
+      <el-button @click="dialogVisible = false;goodNum=''">取 消</el-button>
     </span>
   </el-dialog>
 
@@ -270,9 +241,6 @@ export default {
       totalGoods: 0,
       typeList:[
         {
-          goodsType:'全部'
-        },
-        {
           goodsType:'印花及武器箱'
         },
         {
@@ -280,6 +248,9 @@ export default {
         },
         {
           goodsType:'手枪'
+        },
+        {
+          goodsType:'步枪'
         },
         {
           goodsType:'冲锋枪'
@@ -301,9 +272,6 @@ export default {
         }
       ],
       abraList:[
-        {
-          name:'全部'
-        },
         {
           name:'战痕累累'
         },
@@ -352,8 +320,13 @@ export default {
     },
     /**选择商品**/
     chooseGoods(row){
-      this.dialogVisible = true;
-      this.addRow = row;
+      const isAdd = this.exchangeList.some((value,index) => row.goodsId==this.exchangeList[index].goodsId)
+      if(!isAdd){
+        this.dialogVisible = true;
+        this.addRow = row;
+      }else{
+        this.msgError("请勿重复添加相同商品！");
+      }
     },
     addGoods(num){
       this.addRow.stock = num;
@@ -362,6 +335,7 @@ export default {
           this.msgSuccess("新增成功");
           this.open = false;
           this.dialogVisible = false;
+          this.goodNum="";
           this.getList();
         }
       });
@@ -370,11 +344,13 @@ export default {
     /**关闭dialog**/
     handleClose(done) {
         this.dialogVisible = false;
+        this.goodNum="";
     },
     /** 查询商品列表 */
     getListGoods() {
       this.loading = true;
       listGoods(this.queryParamsGoods).then(response => {
+        console.log(response.data.total)
         this.goodsList = response.data.itemList;
         this.totalGoods = response.data.total;
         this.loading = false;
@@ -483,7 +459,8 @@ export default {
     /** 删除按钮操作 */
     handleDelete(row) {
       const ids = row.id || this.ids;
-      this.$confirm('是否确认删除兑换商品编号为"' + ids + '"的数据项?', "警告", {
+      const goodsNames = row.goodsName;
+      this.$confirm(this.ids.length===0?'确定删除此商品吗？':'确定删除'+this.ids.length+'个商品吗？', "警告", {
           confirmButtonText: "确定",
           cancelButtonText: "取消",
           type: "warning"
@@ -512,12 +489,12 @@ export default {
 </script>
 <style scoped>
   .scope_img{
-    height: 80px;
+    width: 100px;
   }
 </style>
 <style>
 .exchangeChange.el-input.el-input--medium{
   width: 274px;
 }
-</style>>
+</style>
 

@@ -67,3 +67,4 @@ export function getBoxGoods(query) {
     method: 'get',
   })
 }
+

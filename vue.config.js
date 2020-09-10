@@ -6,7 +6,7 @@ function resolve(dir) {
   return path.join(__dirname, dir)
 }
 
-const name = defaultSettings.title || '若依管理系统' // 标题
+const name = defaultSettings.title || 'obcase后台管理管理系统' // 标题
 
 const port = process.env.port || process.env.npm_config_port || 80 // 端口
 
@@ -35,7 +35,7 @@ module.exports = {
     proxy: {
         // detail: https://cli.vuejs.org/config/#devserver-proxy
         [process.env.VUE_APP_BASE_API]: {
-          target: `http://192.168.0.151:8006`,
+          target: `http://192.168.31.151:8006`,//31：开发环境
           changeOrigin: true,
           pathRewrite: {
             ['^' + process.env.VUE_APP_BASE_API]: ''

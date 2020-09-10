@@ -31,6 +31,6 @@ export default  {
  .el-dialog__wrapper  .el-icon-upload-success.el-icon-check{
     position: absolute;
     right: 14px;
-    top: 0px;
+    top: 0px;  
   }
 </style>

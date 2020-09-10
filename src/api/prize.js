@@ -20,7 +20,7 @@ export function getPrize(id) {
 // 新增每日免费新商品
 export function addPrize(data) {
   return request({
-    url: '/prize',
+    url: '/prize/saveGoods',
     method: 'post',
     data: data
   })
@@ -51,3 +51,23 @@ export function exportPrize(query) {
     params: query
   })
 }
+
+//设置奖金
+export function setPrizeMoney(data) {
+  return request({
+    url: '/prize/saveMoney',
+    method: 'post',
+    data: data
+  })
+}
+
+//设置概率
+export function setProprit(data) {
+  return request({
+    url: '/prize/savePro',
+    method: 'post',
+    data: data
+  })
+}
+
+

@@ -51,3 +51,12 @@ export function exportGroup(query) {
     params: query
   })
 }
+
+// 上移下移分组排序
+export function updateIndex(data) {
+  return request({
+    url: '/box/group/sortBoxGroupIndex',
+    method: 'post',
+    data: data
+  })
+}

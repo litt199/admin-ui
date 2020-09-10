@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" :inline="true" label-width="68px">
-      <el-form-item label="用户ID" prop="userId">
+      <el-form-item label="用户昵称" prop="nickName">
         <el-input
           v-model="queryParams.nickName"
           placeholder="请输入用户昵称"
@@ -11,14 +11,18 @@
         />
       </el-form-item>
       <el-form-item label="创建时间" prop="createDate">
-        <el-date-picker clearable size="small" style="width: 200px"
-                        v-model="queryParams.createDate"
-                        type="date"
-                        value-format="yyyy-MM-dd"
-                        placeholder="选择创建时间">
-        </el-date-picker>
+        <el-date-picker
+          v-model="dateRange"
+          size="small"
+          style="width: 240px"
+          value-format="yyyy-MM-dd"
+          type="daterange"
+          range-separator="-"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+        ></el-date-picker>
       </el-form-item>
-      <el-form-item label="充值方式" prop="rechargeMode">
+      <!--<el-form-item label="充值方式" prop="rechargeMode">
         <el-input
           v-model="queryParams.rechargeMode"
           placeholder="请输入充值方式"
@@ -26,27 +30,35 @@
           size="small"
           @keyup.enter.native="handleQuery"
         />
-      </el-form-item>
+      </el-form-item>-->
+      <el-form-item label="充值方式" prop="type" class="rechargeMode">
+          <el-select v-model="queryParams.rechargeMode" placeholder="请选择充值方式" clearable size="small">
+            <el-option label="微信" value="微信" />
+            <el-option label="支付宝" value="支付宝" />
+          </el-select>
+        </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
+    <div class="sumAmountC">累计充值：{{sumAmount}}$</div>
 
 
 
-    <el-table v-loading="loading" :data="orderList" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="昵称" align="center" prop="nickName" />
-      <el-table-column label="头像" align="center" prop="avatar" />
-      <el-table-column label="充值" align="center" prop="amount" />
-      <el-table-column label="创建时间" align="center" prop="createDate" width="180">
+    <el-table v-loading="loading" :data="orderList">
+      <el-table-column type="text" width="55" align="center" />
+      <el-table-column label="头像" align="center">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.createDate, '{y}-{m}-{d}') }}</span>
+          <img :src="(scope.row.avatar===null||scope.row.avatar===''||scope.row.avatar==='img')?imgAvatar:scope.row.avatar" alt="" class="imgAvatar">
         </template>
       </el-table-column>
-      <el-table-column label="充值方式" align="center" prop="rechargeMode" />
-      <el-table-column label="当前账户剩余金额" align="center" prop="currentMoney" />
+      <el-table-column label="昵称" align="center" prop="nickName" />
+      <el-table-column label="金额" align="center" prop="amount" />
+      <el-table-column label="交易类型" align="center" prop="type" />
+      <el-table-column label="支付方式" align="center" prop="rechargeMode" />
+      <el-table-column label="账户余额" align="center" prop="currentMoney" />
+      <el-table-column label="充值时间" align="center" prop="createDate" />
     </el-table>
 
     <pagination
@@ -76,6 +88,9 @@
     name: "Order",
     data() {
       return {
+        sumAmount:0,//累计充值
+        //默认头像
+        imgAvatar:require("../../../assets/headerImg/logo_icon.png"),
         // 遮罩层
         loading: true,
         // 选中数组
@@ -111,7 +126,11 @@
           amount: [
             { required: true, message: "充值或消费金额不能为空", trigger: "blur" }
           ],
-        }
+        },
+        //开箱统计时间查询
+        searchTime:"",
+        dateRange:""
+
       };
     },
     created() {
@@ -121,8 +140,18 @@
       /** 查询用户充值消费记录列表 */
       getList() {
         this.loading = true;
+        if(this.dateRange){
+          this.searchTime = this.dateRange[0] +' 00:00:00'+' - ' + this.dateRange[1] + ' 00:00:00'
+        }else{
+          this.searchTime = "";
+        }
+        this.queryParams.searchTime=this.searchTime;
         listOrder(this.queryParams).then(response => {
+          console.log("--------------------------------this.orderList")
+          console.log(response.rows)
           this.orderList = response.rows;
+          this.sumAmount = response.sumAmount
+          console.log(this.sumAmount)
           this.total = response.total;
           this.loading = false;
         });
@@ -155,6 +184,8 @@
       },
       /** 重置按钮操作 */
       resetQuery() {
+        this.dateRange="";
+        this.queryParams.rechargeMode = undefined;
         this.resetForm("queryForm");
         this.handleQuery();
       },
@@ -234,3 +265,17 @@
     }
   };
 </script>
+<style scoped>
+.imgAvatar{
+  width: 80px;
+}
+.sumAmountC{
+    color: red;
+    position: absolute;
+    top: 36px;
+    right: 70px;
+    font-weight: bold;
+    font-size: 20px;
+
+}
+</style>>

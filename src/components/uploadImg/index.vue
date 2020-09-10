@@ -24,6 +24,7 @@
 import uploadImg from '../upload'
 
 import { getToken } from '@/utils/auth'
+function noop (){}
 export default {
   name: '',
   props:{
@@ -41,12 +42,12 @@ export default {
     } 
   },
   mounted(){
-    // console.log(this.fileList)
   },
   methods:{
      handleSuccess(response, file, fileList) {
        this.$emit('showImgUrl',file.response.url)
-      //  console.log(file.response.url)
+       console.log(this.fileList)
+       console.log(file.response.url)
     },
     // 监听上传失败
     handleError(e, file, fileList) {
@@ -67,7 +68,8 @@ export default {
     handleRemove(){
       this.$refs.dsdsdsd.$refs["upload-inner"].showOrhide=1;
       this.$emit('removeImg')
-    }
+      console.log("删除图片")
+    },
   }
 }
 </script>

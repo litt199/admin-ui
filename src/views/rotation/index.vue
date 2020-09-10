@@ -1,11 +1,11 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" :inline="true" label-width="68px">
+    <!--<el-form :model="queryParams" ref="queryForm" :inline="true" label-width="68px">
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
       </el-form-item>
-    </el-form>
+    </el-form>-->
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
@@ -17,7 +17,7 @@
           v-hasPermi="['obcase:rotation:add']"
         >新增</el-button>
       </el-col>
-      <el-col :span="1.5">
+      <!--<el-col :span="1.5">
         <el-button
           type="success"
           icon="el-icon-edit"
@@ -26,7 +26,7 @@
           @click="handleUpdate"
           v-hasPermi="['obcase:rotation:edit']"
         >修改</el-button>
-      </el-col>
+      </el-col>-->
       <el-col :span="1.5">
         <el-button
           type="danger"
@@ -37,7 +37,7 @@
           v-hasPermi="['obcase:rotation:remove']"
         >删除</el-button>
       </el-col>
-      <el-col :span="1.5">
+      <!--<el-col :span="1.5">
         <el-button
           type="warning"
           icon="el-icon-download"
@@ -45,19 +45,18 @@
           @click="handleExport"
           v-hasPermi="['obcase:rotation:export']"
         >导出</el-button>
-      </el-col>
+      </el-col>-->
     </el-row>
 
     <el-table v-loading="loading" :data="rotationList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="结束时间" align="center" prop="id" />
-      <el-table-column label="位置，home, bar" align="center" prop="location" />
       <el-table-column label="轮播图片" align="center">
         <template slot-scope="scope">
           <img style="width:100px" :src="scope.row.imgUrl" alt="">
         </template>
       </el-table-column>
-      <el-table-column label="点击跳转的URL" align="center" prop="jumpUrl" />
+      <el-table-column label="位置" align="center" prop="location" />
+      <el-table-column label="跳转的URL" align="center" prop="jumpUrl" />
       <el-table-column label="开始时间" align="center" prop="startTime" width="180">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.startTime, '{y}-{m}-{d}') }}</span>
@@ -97,9 +96,9 @@
     />
 
     <!-- 添加或修改首页轮播图对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
+    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body v-if="open">
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="位置，home, bar" prop="location">
+        <el-form-item label="位置" prop="location">
            <el-select v-model="form.location" placeholder="请选择">
               <el-option
                 v-for="item in options"
@@ -111,7 +110,8 @@
         </el-form-item>
         <el-form-item label="轮播图片" prop="imgUrl">
           <el-input v-model="form.imgUrl" placeholder="请输入轮播图片" />
-          <secondFz @showImgUrl="(url)=>{this.form.imgUrl=url}" @removeImg="()=>{this.form.imgUrl=''}" />
+          <uploadImg :fileList="form.imgUrl?[{url:form.imgUrl}]:[]" @getShopProfileFn="(url)=>{form.imgUrl=url}"/>
+          <!--<secondFz @showImgUrl="(url)=>{this.form.imgUrl=url}" @removeImg="()=>{this.form.imgUrl=''}" />-->
         </el-form-item>
         
         <el-form-item label="点击跳转的URL" prop="jumpUrl">
@@ -183,6 +183,18 @@ export default {
       form: {},
       // 表单校验
       rules: {
+        location: [
+          { required: true, message: "位置不能为空", trigger: "blur" }
+        ],
+        imgUrl:[
+          { required: true, message: "轮播图片不能为空", trigger: "blur" }
+        ],
+        startTime: [
+          { required: true, message: "公告开始时间不能为空",trigger:'blur'}
+        ],
+        endTime: [
+          { required: true, message: "公告结束时间不能为空", trigger: "blur" }
+        ]
       }
     };
   },
@@ -194,6 +206,8 @@ export default {
     getList() {
       this.loading = true;
       listRotation(this.queryParams).then(response => {
+        console.log("----------------轮播图列表")
+        console.log(response.rows)
         this.rotationList = response.rows;
         this.total = response.total;
         this.loading = false;
@@ -278,7 +292,7 @@ export default {
     /** 删除按钮操作 */
     handleDelete(row) {
       const ids = row.id || this.ids;
-      this.$confirm('是否确认删除首页轮播图编号为"' + ids + '"的数据项?', "警告", {
+      this.$confirm(this.ids.length===0?'确定删除此轮播图吗？':'确定删除'+this.ids.length+'个轮播图吗？', "警告", {
           confirmButtonText: "确定",
           cancelButtonText: "取消",
           type: "warning"

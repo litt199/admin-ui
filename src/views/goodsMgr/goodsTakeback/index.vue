@@ -19,19 +19,29 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>-->
-      <el-form-item label="取回时间" prop="retrieveTime">
-        <el-date-picker clearable size="small" style="width: 200px"
-          v-model="queryParams.retrieveTime"
-          type="date"
-          placeholder="选择取回时间">
-        </el-date-picker>
+      <el-form-item label="取回时间" prop="dateRange">
+        <el-date-picker
+          v-model="dateRange"
+          size="small"
+          style="width: 240px"
+          value-format="yyyy-MM-dd"
+          type="daterange"
+          range-separator="-"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+        ></el-date-picker>
       </el-form-item>
-      <el-form-item label="发货时间" prop="deliverGoodsTime">
-        <el-date-picker clearable size="small" style="width: 200px"
-          v-model="queryParams.deliverGoodsTime"
-          type="date"
-          placeholder="选择发货时间">
-        </el-date-picker>
+      <el-form-item label="发货时间" prop="daterange">
+        <el-date-picker
+          v-model="daterange"
+          size="small"
+          style="width: 240px"
+          value-format="yyyy-MM-dd"
+          type="daterange"
+          range-separator="-"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+        ></el-date-picker>
       </el-form-item>
 
     
@@ -40,20 +50,24 @@
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
-
+    <div style="position: absolute;top: 30px;right: 70px;font-size: 20px;">累计发货单数量：{{sumNum}}，发货总成本金额：{{sumAmount}}￥</div>
 
     <el-table v-loading="loading" :data="goodsTakebackList">
       <el-table-column type="text" width="55" align="center" />
-      <el-table-column label="头像" align="center" prop="avatar" />
+       <el-table-column label="头像" align="center">
+        <template slot-scope="scope">
+          <img :src="(scope.row.avatar===null||scope.row.avatar===''||scope.row.avatar==='img')?imgAvatar:scope.row.avatar" alt="" class="imgAvatar">
+        </template>
+      </el-table-column>
       <el-table-column label="昵称" align="center" prop="nickName" />
       <el-table-column label="商品" align="center">
         <template slot-scope="scope">
           <img class="scope_img" :src="scope.row.goodsPicture" alt="">
-          <span>{{scope.row.goodsName}}</span>
+          <p>{{scope.row.goodsName}}</p>
         </template>
       </el-table-column>
-      <el-table-column label="商品价格" align="center" prop="goodsPrice" />
-      <el-table-column label="商品成本" align="center" prop="goodsPrice" />
+      <el-table-column label="商品价格($)" align="center" prop="goodsPrice" />
+      <el-table-column label="商品成本(￥)" align="center" prop="deliverGoodsCostPrice" />
       <el-table-column label="取回时间" align="center" prop="retrieveTime" width="180">
         <template slot-scope="scope">
           <span>{{scope.row.retrieveTime}}</span>
@@ -64,6 +78,7 @@
           <span>{{scope.row.deliverGoodsTime}}</span>
         </template>
       </el-table-column>
+
       <el-table-column label="交易链接" align="center" prop="transactionUrl" />
     </el-table>
     
@@ -97,6 +112,12 @@ export default {
   name: "GoodsTakeback",
   data() {
     return {
+      //sumAmount商品总金额
+      sumAmount:0,
+      //累计取回数量
+      sumNum:0,
+      //默认头像
+      imgAvatar:require("../../../assets/headerImg/logo_icon.png"),
         //选择
        options: [{
           value: '0',
@@ -137,7 +158,8 @@ export default {
         steamRechargeCode: undefined,
         luckyFlag: undefined,
         anchorUserId: undefined,
-        voluntarilyPay: undefined
+        voluntarilyPay: undefined,
+        DeliverTime:undefined,
       },
       // 表单参数
       form: {},
@@ -148,7 +170,11 @@ export default {
       confirmExchangeRes:{
         "id":null,
         "deliverGoodsCostPrice":undefined
-      }
+      },
+      deliverTime:"",
+      dateRange:"",
+      daterange:"",
+      searchTime:""
     };
   },
   created() {
@@ -171,9 +197,26 @@ export default {
     /** 查询取回列表 */
     getList() {
       this.loading = true;
+      //取回时间
+      if(this.dateRange){
+        this.searchTime = this.dateRange[0] +' 00:00:00'+' - ' + this.dateRange[1] + ' 00:00:00'
+      }else{
+        this.searchTime=""
+      }
+      this.queryParams.searchTime=this.searchTime;
+      //发货时间
+      if(this.daterange){
+        this.deliverTime = this.daterange[0] +' 00:00:00'+' - ' + this.daterange[1] + ' 00:00:00'
+      }else{
+        this.deliverTime=""
+      }
+      this.queryParams.deliverTime=this.deliverTime;
       listGoodsTakeback(this.queryParams).then(response => {
         console.log("-----------------------------goodsTakebackList")
         console.log(response.rows)
+        this.sumAmount = response.sumAmount
+        console.log(this.sumAmount)
+        this.sumNum=response.total
         this.goodsTakebackList = response.rows;
         this.total = response.total;
         this.loading = false;
@@ -212,6 +255,8 @@ export default {
     },
     /** 重置按钮操作 */
     resetQuery() {
+      this.dateRange="";
+      this.daterange="";
       this.resetForm("queryForm");
       this.handleQuery();
     },
@@ -294,8 +339,11 @@ export default {
 </script>
 <style scoped>
 .scope_img{
-  width: 146px;
-  display: block;
+  width: 100px;
+  display: inline-block;
+}
+.imgAvatar{
+  width: 80px;
 }
 </style>
 <style>

@@ -1,13 +1,13 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" :inline="true" label-width="68px">
+    <!--<el-form :model="queryParams" ref="queryForm" :inline="true" label-width="68px">
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
       </el-form-item>
-    </el-form>
+    </el-form>-->
 
-    <el-row :gutter="10" class="mb8">
+   <!--  <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button
           type="primary"
@@ -17,7 +17,7 @@
           v-hasPermi="['recharge:merchant:add']"
         >新增</el-button>
       </el-col>
-      <el-col :span="1.5">
+     <el-col :span="1.5">
         <el-button
           type="success"
           icon="el-icon-edit"
@@ -46,17 +46,16 @@
           v-hasPermi="['recharge:merchant:export']"
         >导出</el-button>
       </el-col>
-    </el-row>
+    </el-row>-->
 
-    <el-table v-loading="loading" :data="merchantList" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="0=启用；1=关闭" align="center" prop="id" />
+    <el-table v-loading="loading" :data="merchantList">
+      <el-table-column type="text" width="55" align="center" />
       <el-table-column label="支付方式" align="center" prop="paymentMethod" />
-      <el-table-column label="支付接口地址" align="center" prop="paymentInterfaceUrl" />
-      <el-table-column label="支付回调通知接口地址" align="center" prop="paymentNotifyUrl" />
+      <el-table-column label="状态" align="center" prop="status" />
       <el-table-column label="商户号" align="center" prop="merchantNumber" />
       <el-table-column label="秘钥key" align="center" prop="secretKey" />
-      <el-table-column label="0=启用；1=关闭" align="center" prop="status" />
+      <el-table-column label="支付接口地址" align="center" prop="paymentInterfaceUrl" />
+      <el-table-column label="支付回调通知接口地址" align="center" prop="paymentNotifyUrl"  />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
@@ -86,15 +85,15 @@
     />
 
     <!-- 添加或修改支付接口对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="80px">
+    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body class="merchant">
+      <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="支付方式" prop="paymentMethod">
           <el-input v-model="form.paymentMethod" placeholder="请输入支付方式" />
         </el-form-item>
         <el-form-item label="支付接口地址" prop="paymentInterfaceUrl">
           <el-input v-model="form.paymentInterfaceUrl" placeholder="请输入支付接口地址" />
         </el-form-item>
-        <el-form-item label="支付回调通知接口地址" prop="paymentNotifyUrl">
+        <el-form-item label="支付回调通知接口地址" prop="paymentNotifyUrl" class="callback">
           <el-input v-model="form.paymentNotifyUrl" placeholder="请输入支付回调通知接口地址" />
         </el-form-item>
         <el-form-item label="商户号" prop="merchantNumber">
@@ -103,10 +102,11 @@
         <el-form-item label="秘钥key" prop="secretKey">
           <el-input v-model="form.secretKey" placeholder="请输入秘钥key" />
         </el-form-item>
-        <el-form-item label="0=启用；1=关闭">
-          <el-radio-group v-model="form.status">
-            <el-radio label="1">请选择字典生成</el-radio>
-          </el-radio-group>
+        <el-form-item label="状态" prop="type" class="status">
+          <el-select v-model="form.status" placeholder="请选择状态" clearable size="small">
+            <el-option label="启用" value="0" />
+            <el-option label="关闭" value="1" />
+          </el-select>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -158,9 +158,16 @@
     methods: {
       /** 查询支付接口列表 */
       getList() {
+        this.merchantList = []
         this.loading = true;
         listMerchant(this.queryParams).then(response => {
-          this.merchantList = response.rows;
+          console.log("------------------------this.merchantList")
+          console.log(response.rows)
+          response.rows.forEach((value,index)=>{
+          if(value.status===0){value.status="启用"}else if(value.status===1){value.status="关闭"}
+          this.merchantList.push(value);
+        })
+          // this.merchantList = response.rows;
           this.total = response.total;
           this.loading = false;
         });
@@ -213,7 +220,9 @@
         this.reset();
         const id = row.id || this.ids
         getMerchant(id).then(response => {
-          this.form = response.data;
+          let value = response.data;
+          if(value.status===0){value.status="启用"}else if(value.status===1){value.status="关闭"}
+          this.form = value;
           this.open = true;
           this.title = "修改支付接口";
         });
@@ -223,6 +232,8 @@
         this.$refs["form"].validate(valid => {
           if (valid) {
             if (this.form.id != undefined) {
+              var params = this.form;
+              if(params.status=="启用"){params.status=0}else if(params.status=="关闭"){params.status=1}
               updateMerchant(this.form).then(response => {
                 if (response.code === 200) {
                   this.msgSuccess("修改成功");
@@ -272,3 +283,13 @@
     }
   };
 </script>
+<style>
+.merchant .el-form-item--medium .el-form-item__label{
+  line-height: 36px;
+  text-align: right;
+}
+
+.merchant .el-form-item.callback.el-form-item--medium .el-form-item__label{
+  line-height: 18px!important;
+}
+</style>

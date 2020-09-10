@@ -47,6 +47,10 @@ Vue.prototype.msgInfo = function (msg) {
 import secondFz from './components/uploadImg'
 Vue.use(secondFz)
 
+// 引入自定义组件
+import uploadImg from './components/uploadImg1'
+Vue.use(uploadImg)
+
 // 全局组件挂载
 Vue.component('Pagination', Pagination)
 

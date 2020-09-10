@@ -12,7 +12,7 @@ export function listProfit(query) {
 // 查询箱子盈利详细
 export function getProfit(id) {
   return request({
-    url: '/box/profit/' + id,
+    url: '/box/profit/info/' + id,
     method: 'get'
   })
 }
@@ -49,5 +49,23 @@ export function exportProfit(query) {
     url: '/box/profit/export',
     method: 'get',
     params: query
+  })
+}
+
+//开箱统计
+export function getOpenBoxRecordPage(query) {
+  return request({
+    url: '/userGoods/openBoxRecordPage',
+    method: 'get',
+    params: query
+  })
+}
+
+//开箱统计
+export function resetProfitZero(data) {
+  return request({
+    url: '/box/profit/profitZero',
+    method: 'post',
+    data: data
   })
 }

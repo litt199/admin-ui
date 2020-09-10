@@ -62,3 +62,39 @@ export function exportUser(query) {
     params: query
   })
 }
+
+//查看包裹
+export function getPackage(query) {
+  return request({
+    url: '/userGoods/getPackagesData',
+    method: 'get',
+    params: query
+  })
+}
+
+//修改金额
+export function editMoney(data) {
+  return request({
+    url: '/user/updateMoney',
+    method: 'post',
+    data: data
+  })
+}
+
+//启用禁用用户
+export function enableUse(data) {
+  return request({
+    url: '/user/enableUser',
+    method: 'post',
+    data: data
+  })
+}
+
+//查看优惠券
+export function getCound(query) {
+  return request({
+    url: '/coupon/info',
+    method: 'get',
+    params: query
+  })
+}

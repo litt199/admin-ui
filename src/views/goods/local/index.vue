@@ -56,7 +56,7 @@
           v-hasPermi="['system:goods:remove']"
         >删除</el-button>
       </el-col>
-      <el-col :span="1.5">
+      <!--<el-col :span="1.5">
         <el-button
           type="warning"
           icon="el-icon-download"
@@ -64,7 +64,7 @@
           @click="handleExport"
           v-hasPermi="['system:goods:export']"
         >导出</el-button>
-      </el-col>
+      </el-col>-->
     </el-row>
 
     <el-table v-loading="loading" :data="goodsList" @selection-change="handleSelectionChange">
@@ -112,7 +112,7 @@
     />
 
     <!-- 添加或修改商品对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body @click="handleClose"> 
+    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body @click="cancel" v-if="open"> 
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="商品名称" prop="goodsName">
           <el-input v-model="form.goodsName" placeholder="请输入商品名称" />
@@ -130,7 +130,7 @@
         </el-form-item>
         <el-form-item label="商品图片" prop="goodsPicture">
           <el-input v-model="form.goodsPicture" placeholder="请输入商品图片" />
-          <secondFz ref='secondFzref' :fileList="form.goodsPicture?[{url:form.goodsPicture}]:[]" :dialogImageUrl='form.goodsPicture' @showImgUrl="(url)=>{this.form.goodsPicture=url}" @removeImg="()=>{this.form.goodsPicture=''}" />
+          <uploadImg :fileList="form.goodsPicture?[{url:form.goodsPicture}]:[]" @getShopProfileFn="(url)=>{form.goodsPicture=url}"/>
         </el-form-item>
         <el-form-item label="商品价格" prop="goodsPrice">
           <el-input v-model="form.goodsPrice" type="number" placeholder="请输入商品价格" />
@@ -227,7 +227,7 @@ export default {
   },
   methods: {
     handleClose(done){
-      this.$refs.secondFzref.handleRemove();
+      // this.$refs.secondFzref.handleRemove();
     },
     /** 查询商品列表 */
     getList() {
@@ -356,6 +356,6 @@ export default {
 </script>
 <style scoped>
   .scope_img{
-    height: 80px;
+    width: 100px;
   }
 </style>>

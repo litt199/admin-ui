@@ -1,16 +1,15 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" :inline="true" label-width="68px">
-      <el-form-item label="用户昵称" prop="avatar">
+      <el-form-item label="用户昵称" prop="nickName">
         <el-input
-          v-model="queryParams.avatar"
+          v-model="queryParams.nickName"
           placeholder="请输入用户昵称"
           clearable
           size="small"
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-
       <!--<el-form-item label="商品名称" prop="goodsName">
         <el-input
           v-model="queryParams.goodsName"
@@ -20,36 +19,46 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>-->
-   
-  
-      <el-form-item label="取回时间" prop="retrieveTime">
+      <!--<el-form-item label="取回时间" prop="retrieveTime">
         <el-date-picker clearable size="small" style="width: 200px"
           v-model="queryParams.retrieveTime"
           type="date"
           value-format="yyyy-MM-dd"
           placeholder="选择取回装备时间">
         </el-date-picker>
+      </el-form-item>-->
+      <el-form-item label="取回时间" prop="dateRange">
+        <el-date-picker
+          v-model="dateRange"
+          size="small"
+          style="width: 240px"
+          value-format="yyyy-MM-dd"
+          type="daterange"
+          range-separator="-"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+        ></el-date-picker>
       </el-form-item>
-
-   
-
-    
-
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
+    <div style="position: absolute;top: 30px;right: 70px;font-size: 20px;">累计兑换数量：{{sumNum}}，商品总金额：{{sumAmount}}$</div>
 
 
     <el-table v-loading="loading" :data="goodsExchangeList">
       <el-table-column type="text" width="55" align="center" />
-      <el-table-column label="头像" align="center" prop="avatar" />
+      <el-table-column label="头像" align="center">
+        <template slot-scope="scope">
+          <img :src="(scope.row.avatar===null||scope.row.avatar===''||scope.row.avatar==='img')?imgAvatar:scope.row.avatar" alt="" class="imgAvatar">
+        </template>
+      </el-table-column>
       <el-table-column label="昵称" align="center" prop="nickName" />
       <el-table-column label="商品" align="center">
         <template slot-scope="scope">
           <img class="scope_img" :src="scope.row.goodsPicture" alt="">
-          <span>{{scope.row.goodsName}}</span>
+          <p>{{scope.row.goodsName}}</p>
         </template>
       </el-table-column>
       <el-table-column label="商品价格" align="center" prop="goodsPrice" />
@@ -65,7 +74,6 @@
         </template>
       </el-table-column>
     </el-table>
-    
     <pagination
       v-show="total>0"
       :total="total"
@@ -96,6 +104,15 @@ export default {
   name: "GoodsExchange",
   data() {
     return {
+      //开箱统计时间查询
+      searchTime:"",
+      dateRange:"",
+      //sumAmount商品总金额
+      sumAmount:0,
+      //累计取回数量
+      sumNum:0,
+      //默认头像
+      imgAvatar:require("../../../assets/headerImg/logo_icon.png"),
         //选择
        options: [{
           value: '0',
@@ -169,9 +186,18 @@ export default {
     /** 查询兑换列表 */
     getList() {
       this.loading = true;
+      if(this.dateRange){
+        this.searchTime = this.dateRange[0] +' 00:00:00'+' - ' + this.dateRange[1] + ' 00:00:00'
+      }else{
+        this.searchTime=""
+      }
+      this.queryParams.searchTime=this.searchTime;
       listGoodsExchange(this.queryParams).then(response => {
         console.log("------------------------------goodsExchangeList")
         console.log(response.rows)
+        this.sumAmount = response.sumAmount
+        console.log(this.sumAmount)
+        this.sumNum=response.total
         this.goodsExchangeList = response.rows;
         this.total = response.total;
         this.loading = false;
@@ -211,6 +237,7 @@ export default {
     },
     /** 重置按钮操作 */
     resetQuery() {
+      this.dateRange="";
       this.resetForm("queryForm");
       this.handleQuery();
     },
@@ -293,8 +320,11 @@ export default {
 </script>
 <style scoped>
 .scope_img{
-  width: 146px;
-  display: block;
+  width: 100px;
+  display: inline-block;
+}
+.imgAvatar{
+  width: 80px;
 }
 </style>
 <style>

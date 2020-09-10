@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" :inline="true" label-width="68px">
+    <!--<el-form :model="queryParams" ref="queryForm" :inline="true" label-width="68px">
       <el-form-item label="箱子分组" style="white-space:nowrap">
         <el-select v-model="queryParams.groupId" placeholder="请选择">
           <el-option
@@ -15,7 +15,7 @@
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
       </el-form-item>
-    </el-form>
+    </el-form>-->
 
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
@@ -47,7 +47,7 @@
           v-hasPermi="['group:group:remove']"
         >删除</el-button>
       </el-col>
-      <el-col :span="1.5">
+      <!--<el-col :span="1.5">
         <el-button
           type="warning"
           icon="el-icon-download"
@@ -55,14 +55,19 @@
           @click="handleExport"
           v-hasPermi="['group:group:export']"
         >导出</el-button>
-      </el-col>
+      </el-col>-->
     </el-row>
 
     <el-table v-loading="loading" :data="groupList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="排序索引" align="center" prop="groupId" />
-      <el-table-column label="箱子的分组名称" align="center" prop="groupName" />
-      <el-table-column label="排序索引" align="center" prop="orderIndex" />
+      <el-table-column label="分组排序" align="center" prop="orderIndex" />
+      <el-table-column label="分组名称" align="center" prop="groupName" />
+      <el-table-column label="创建日期" align="center" prop="createDate" />
+      <!--<el-table-column label="创建日期" align="center" prop="createDate" width="180">
+        <template slot-scope="scope">
+          <span>{{ parseTime(scope.row.createDate, '{y}-{m}-{d}') }}</span>
+        </template>
+      </el-table-column>-->
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
@@ -79,6 +84,16 @@
             @click="handleDelete(scope.row)"
             v-hasPermi="['group:group:remove']"
           >删除</el-button>
+          <el-button
+            size="mini"
+            type="text"
+            @click="updateIndex(scope.row,-1)"
+          >上移</el-button>
+          <el-button
+            size="mini"
+            type="text"
+            @click="updateIndex(scope.row,1)"
+          >下移</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -93,13 +108,13 @@
 
     <!-- 添加或修改箱子分组对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="80px">
+      <el-form ref="form" :model="form" :rules="rules" label-width="113px">
         <el-form-item label="箱子的分组名称" prop="groupName">
-          <el-input v-model="form.groupName" placeholder="请输入箱子的分组名称" />
+          <el-input v-model="form.groupName" placeholder="请输入箱子的分组名称" maxlength="50"/>
         </el-form-item>
-        <el-form-item label="排序索引" prop="orderIndex">
+        <!--<el-form-item label="排序索引" prop="orderIndex">
           <el-input v-model="form.orderIndex" placeholder="请输入排序索引" />
-        </el-form-item>
+        </el-form-item>-->
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
@@ -110,7 +125,7 @@
 </template>
 
 <script>
-import { listGroup, getGroup, delGroup, addGroup, updateGroup, exportGroup } from "@/api/box/group";
+import { listGroup, getGroup, delGroup, addGroup, updateGroup, exportGroup,updateIndex } from "@/api/box/group";
 
 export default {
   name: "Group",
@@ -148,6 +163,17 @@ export default {
     this.getList();
   },
   methods: {
+    //上移下移排序
+    updateIndex(row,num){
+      let data={
+        "groupId":row.groupId,
+        "upOrDown":num,
+        "orderIndex":row.orderIndex
+      }
+      updateIndex(data).then(response => {
+        this.getList();
+      });
+    },
     /** 查询箱子分组列表 */
     getList() {
       this.loading = true;
@@ -236,7 +262,7 @@ export default {
     /** 删除按钮操作 */
     handleDelete(row) {
       const groupIds = row.groupId || this.ids;
-      this.$confirm('是否确认删除箱子分组编号为"' + groupIds + '"的数据项?', "警告", {
+      this.$confirm(this.ids.length===0?'确定删除此箱子分组吗？':'确定删除'+this.ids.length+'个箱子分组吗？', "警告", {
           confirmButtonText: "确定",
           cancelButtonText: "取消",
           type: "warning"

@@ -34,7 +34,7 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item label="价格筛选" prop="goodsTitle">
+      <!--<el-form-item label="价格筛选" prop="goodsTitle">
         <el-input
           class="priceInput"
           v-model="queryParams.minPrice"
@@ -47,7 +47,7 @@
           placeholder="结束价格"
           oninput="value=value.replace(/[^\d.]/g,'')"
         />
-      </el-form-item>
+      </el-form-item>-->
 
 
       <el-form-item>
@@ -68,7 +68,7 @@
       <el-table-column label="商品价格" align="center" prop="goodsPrice" />
       <el-table-column label="创建时间" align="center" prop="createDate" width="180">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.createDate, '{y}-{m}-{d}') }}</span>
+          <span>{{ parseTime(scope.row.createdAt) }}</span>
         </template>
       </el-table-column>
 
@@ -85,7 +85,7 @@
 
 
     <!-- 添加或修改商品对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
+    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body v-if="open">
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
 
         <el-form-item label="商品名称" prop="goodsName">
@@ -97,8 +97,7 @@
         </el-form-item>
         <el-form-item label="商品图片" prop="goodsPicture">
           <el-input v-model="form.goodsPicture" placeholder="请输入商品图片" />
-          <secondFz :fileList="form.goodsPicture?[{url:form.goodsPicture}]:[]" :dialogImageUrl='form.goodsPicture' @showImgUrl="(url)=>{this.form.goodsPicture=url}" @removeImg="()=>{this.form.goodsPicture=''}" />
-
+          <uploadImg :fileList="form.goodsPicture?[{url:form.goodsPicture}]:[]" @getShopProfileFn="(url)=>{form.goodsPicture=url}"/>
         </el-form-item>
         <el-form-item label="商品价格" prop="goodsPrice">
           <el-input v-model="form.goodsPrice" placeholder="请输入商品价格" />
@@ -175,9 +174,6 @@ export default {
       boxId:null,
       typeList:[
         {
-          goodsType:'全部'
-        },
-        {
           goodsType:'印花及武器箱'
         },
         {
@@ -185,6 +181,9 @@ export default {
         },
         {
           goodsType:'手枪'
+        },
+        {
+          goodsType:'步枪'
         },
         {
           goodsType:'冲锋枪'
@@ -206,9 +205,6 @@ export default {
         }
       ],
       abraList:[
-        {
-          name:'全部'
-        },
         {
           name:'战痕累累'
         },
@@ -364,6 +360,6 @@ export default {
 </script>
 <style>
 .scope_img{
-  height: 80px;
+  width: 100px;
 }
 </style>
